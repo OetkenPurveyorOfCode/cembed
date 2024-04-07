@@ -106,7 +106,7 @@ static void write_byte_string(BufferedFile *bf, unsigned char n) {
 
 
 static void write_embedded(FILE *fp, const char *filename,
-  const char *varprefix, int nostatic, int zerobyte)
+  const char *varprefix, int nostatic, int zerobyte, const char* variable_name)
 {
   FILE *infp = fopen(filename, "rb");
   if (!infp) {
@@ -120,7 +120,12 @@ static void write_embedded(FILE *fp, const char *filename,
   safename(varname, filename);
 
   if (!nostatic) { fprintf(fp, "static "); }
-  fprintf(fp, "unsigned char %s%s[] = {", varprefix, varname);
+  if (!variable_name) {
+    fprintf(fp, "unsigned char %s%s[] = {", varprefix, varname);
+  }
+  else {
+    fprintf(fp, "unsigned char %s[] = {", variable_name);
+  }
   BufferedFile inbf = bf_reader(infp);
   BufferedFile bf = bf_writer(fp);
   int n = 0;
@@ -148,6 +153,7 @@ static void print_help(void) {
     "Create C header with file data embedded in char arrays\n"
     "\n"
     "  -o <filename>  output file\n"
+    "  -n <varname>   override default variable name (has to be a valid C identifier)\n"
     "  -p <prefix>    prefix to place before variable names\n"
     "  -s             omit `static` keyword\n"
     "  -z             add zero byte to end of array\n"
@@ -165,6 +171,7 @@ int main(int argc, char **argv) {
   const char *outfile = NULL;
   const char *prefix = "";
   const char *tablename = NULL;
+  const char *variable_name = NULL;
   int zerobyte = 0;
   int nostatic = 0;
 
@@ -206,7 +213,11 @@ int main(int argc, char **argv) {
         if (arg == arg_end) { error("expected prefix after option '-p'"); }
         prefix = *arg;
         break;
-
+      case 'n':
+        arg++;
+        if (arg == arg_end) { error("expected varname after option '-n'"); }
+        variable_name = *arg;
+        break;
       default:
         error("invalid option '%s'", *arg);
         break;
@@ -227,7 +238,7 @@ int main(int argc, char **argv) {
 
   /* write files */
   for (char **a = arg; a < arg_end; a++) {
-    write_embedded(fp, *a, prefix, nostatic, zerobyte);
+    write_embedded(fp, *a, prefix, nostatic, zerobyte, variable_name);
   }
 
   /* write table */
