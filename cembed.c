@@ -26,7 +26,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#define VERSION "v0.3"
+#define VERSION "v0.4"
 #define MAX_FILENAME 256
 
 typedef struct {
